@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   automata.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aldferna <aldferna@student.42.fr>          +#+  +:+       +#+        */
+/*   By: lumartin <lumartin@student.42madrid.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/26 18:17:47 by lumartin          #+#    #+#             */
-/*   Updated: 2025/03/13 18:18:52 by aldferna         ###   ########.fr       */
+/*   Updated: 2025/03/13 21:34:31 by lumartin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,12 +38,10 @@ int	automata(t_token *tokens)
 	if (current_state != 1 && current_state != 2)
 	{
 		printf("syntax error: %s\n\n", elements[prev_token]);
-		printf("END\n\n");
 		return (1);
 	}
 	else
 	{
-		printf("correct\n\n");
 		return (0);
 	}
 	return (1);
@@ -66,7 +64,6 @@ void expand_in_heredoc(char **line, t_token *tokens)
 		if (line[0][i] == '$')
 		{
 			content = ft_substr(line[0], 0, i);
-			printf("content en expand heredoc %s\n", content);
 			i++;
 			if (line[0][i] == '?')
 			{
@@ -78,9 +75,7 @@ void expand_in_heredoc(char **line, t_token *tokens)
 			else
 			{
 				len_var_name = ft_len_var_name(line[0], i);
-				printf("len_var_name en expand heredoc %d\n", len_var_name);
 				var_name = ft_substr(line[0], i, len_var_name);
-				printf("var_name en expand heredoc %s\n", var_name);
 				current_env_list = tokens->env_mshell;
 				while (current_env_list != NULL)
 				{
@@ -146,7 +141,6 @@ void	handle_heredoc(char **eof, int *fd, t_token *tokens)
 		return;
 	if (ft_strncmp(line, *eof, ft_strlen(*eof) + 1) == 0)
 	{
-		printf("aqui\n");
 		write_in_pipe("", fd);
 		return;
 	}
@@ -268,9 +262,7 @@ char	**build_command_string(t_token *tokens, int *count)
 			aux_move--;
 		temp_tokens = temp_tokens->next;
 	}
-	printf("count comds; %d\n", (*count));
 	num_args = count_args(temp_tokens);
-	printf("num_Args %d\n", num_args);
 	args = malloc((num_args + 1) * sizeof(char *));
 	if (!args)
 		return (NULL);
