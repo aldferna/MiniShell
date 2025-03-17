@@ -6,40 +6,18 @@
 /*   By: aldferna <aldferna@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 00:14:54 by lumartin          #+#    #+#             */
-/*   Updated: 2025/03/14 17:59:37 by aldferna         ###   ########.fr       */
+/*   Updated: 2025/03/17 15:28:54 by aldferna         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../inc/minishell.h"
 
-char	*handle_pwd_back(char *dir, char *pwd)
+static void	print_cd_error(char *path)
 {
-	char	**components;
-	char	*result;
-	int		levels_up;
-	int		i;
-
-	if (getcwd(NULL, 0) == NULL)
-		return ft_strjoin(pwd, ft_strjoin("/", dir));
-	levels_up = 0;
-	components = ft_split(dir, '/');
-	i = 0;
-	while (components && components[i])
-	{
-		if (ft_strncmp(components[i], "..", 3) == 0)
-			levels_up++;
-		i++;
-	}
-	free_array(components);
-	i = ft_strlen(pwd);
-	while (i > 0 && levels_up > 0)
-	{
-		if (pwd[i] == '/')
-			levels_up--;
-		i--;
-	}
-	result = ft_substr(pwd, 0, i + 1);
-	return (result);
+	ft_putstr_fd("cd: ", 2);
+	ft_putstr_fd(path, 2);
+	ft_putstr_fd(": No such file or directory\n", 2);
+	exit_num = 1;
 }
 
 void	modify_pwd(t_token **tokens, char *dir)
@@ -56,15 +34,29 @@ void	modify_pwd(t_token **tokens, char *dir)
 	{
 		if (ft_strncmp(aux->name, "PWD", ft_strlen("PWD")) == 0)
 		{
-			if (ft_strnstr(dir, "..", 2)) //aqui paraa los de ... ?
+			if (ft_strncmp(dir, ".", 1) == 0)
 			{
-				new_pwd = handle_pwd_back(dir, aux->content);
+				if (getcwd(NULL, 0) == NULL)
+				{
+					ft_putstr_fd("cd: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory\n",
+						2);
+					new_pwd = ft_strjoin(aux->content, ft_strjoin("/", dir));
+					free(aux->content);
+					aux->content = new_pwd;
+					return ;
+				}
+				new_pwd = ft_strdup(getcwd(NULL, 0));
 				free(aux->content);
 				aux->content = new_pwd;
 			}
-			else if (!ft_strncmp(dir, get_env_content((*tokens)->env_mshell, "HOME"), 5))
+			else if (!ft_strncmp(dir, get_env_content((*tokens)->env_mshell,
+						"HOME"), 5))
 			{
-				new_pwd = get_env_content((*tokens)->env_mshell, "HOME");
+				if (ft_strlen(dir) == ft_strlen(get_env_content((*tokens)->env_mshell,
+							"HOME")))
+					new_pwd = get_env_content((*tokens)->env_mshell, "HOME");
+				else
+					new_pwd = ft_strdup(dir);
 				free(aux->content);
 				aux->content = new_pwd;
 			}
@@ -97,7 +89,7 @@ void	modify_pwd(t_token **tokens, char *dir)
 static void	cd_to_home(t_token **tokens)
 {
 	char	*home_path;
-	char 	*actual_path;
+	char	*actual_path;
 
 	home_path = get_env_content((*tokens)->env_mshell, "HOME");
 	if (!home_path)
@@ -109,7 +101,7 @@ static void	cd_to_home(t_token **tokens)
 	if (ft_strncmp(home_path, actual_path, ft_strlen(actual_path)))
 	{
 		if (chdir(home_path) == 0)
-			modify_pwd(tokens, home_path);	
+			modify_pwd(tokens, home_path);
 	}
 	// else
 	// {
@@ -130,7 +122,7 @@ static char	*find_path(char **args)
 	return (path);
 }
 
-char *find_desired_path(char *pwd, char *dir)
+char	*find_desired_path(char *pwd, char *dir)
 {
 	char	**components_dir;
 	char	**components_pwd;
@@ -142,23 +134,23 @@ char *find_desired_path(char *pwd, char *dir)
 	components_dir = ft_split(dir, '/');
 	components_pwd = ft_split(pwd, '/');
 	i = 0;
-	while (components_dir && components_dir[i])
-	{
-		if (ft_strncmp(components_dir[i], "..", 3) == 0)
-			levels_up++;
-		i++;
-	}
-	i = 0;
 	while (components_pwd && components_pwd[i])
 	{
 		if (ft_strncmp(components_pwd[i], "..", 3) == 0)
 			levels_up++;
 		i++;
 	}
+	i = 0;
+	levels_up *= 2;
+	while (components_dir && components_dir[i])
+	{
+		if (ft_strncmp(components_dir[i], "..", 3) == 0)
+			levels_up++;
+		i++;
+	}
 	free_array(components_dir);
 	free_array(components_pwd);
 	i = ft_strlen(pwd);
-	levels_up = (levels_up * 2) - 1;
 	while (i > 0 && levels_up > 0)
 	{
 		if (pwd[i] == '/')
@@ -169,11 +161,11 @@ char *find_desired_path(char *pwd, char *dir)
 	return (result);
 }
 
-static int validate_input(char *input)
+static int	validate_input(char *input)
 {
-	char **chop_input;
-	int i;
-	int ok;
+	char	**chop_input;
+	int		i;
+	int		ok;
 
 	i = 0;
 	ok = 0;
@@ -186,46 +178,49 @@ static int validate_input(char *input)
 	}
 	free_array(chop_input);
 	if (ok == i)
-		return 1;
-	return 0;
+		return (1);
+	return (0);
+}
+
+static void	handle_broken_pwd(t_token **tokens, char *input_path)
+{
+	char	*desired_path;
+
+	if (!validate_input(input_path))
+	{
+		print_cd_error(input_path);
+		return ;
+	}
+	desired_path = find_desired_path(get_env_content((*tokens)->env_mshell,
+				"PWD"), input_path);
+	if (chdir(desired_path) == 0)
+	{
+		get_env_content_and_replace(tokens, "PWD", desired_path);
+	}
+	else
+	{
+		ft_putstr_fd("cd: error retrieving current directory: getcwd: ", 2);
+		ft_putstr_fd("cannot access parent directories: No such file or directory\n",
+			2);
+		modify_pwd(tokens, input_path);
+	}
+	//free(desired_path);
 }
 
 static void	execute_cd(char *input_path, t_token **tokens)
 {
-	char *desired_path;
-
 	if (getcwd(NULL, 0) == NULL)
 	{
-		if (!validate_input(input_path))
-		{
-			write(2, "not such file or directory\n", 28);
-			exit_num = 1;
-			return;
-		}
-		desired_path = find_desired_path(get_env_content((*tokens)->env_mshell, "PWD"), input_path);
-		if (chdir(desired_path) == 0)
-		{
-			get_env_content_and_replace(tokens, "PWD", desired_path);
-			//return; //quitad ahora
-		}
-		else
-		{
-			printf("cd: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory\n");
-			modify_pwd(tokens, input_path);
-		}
+		handle_broken_pwd(tokens, input_path);
+		return ;
+	}
+	if (chdir(input_path) == 0)
+	{
+		modify_pwd(tokens, input_path);
+		exit_num = 0;
 	}
 	else
-	{
-		if (chdir(input_path) == 0)
-			modify_pwd(tokens, input_path);
-		else
-		{
-			exit_num = 1;
-			ft_putstr_fd("cd: ", 2);
-			ft_putstr_fd(input_path, 2);
-			ft_putstr_fd(": No such file or directory\n", 2);
-		}
-	}	
+		print_cd_error(input_path);
 }
 
 void	ft_cd(char **args, t_token **tokens)
@@ -233,7 +228,9 @@ void	ft_cd(char **args, t_token **tokens)
 	char	*path;
 
 	if (!args[1])
+	{
 		cd_to_home(tokens);
+	}
 	else if (args[1] && args[2])
 	{
 		exit_num = 1;

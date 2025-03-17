@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lumartin <lumartin@student.42madrid.com    +#+  +:+       +#+        */
+/*   By: aldferna <aldferna@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/20 15:24:09 by lumartin          #+#    #+#             */
-/*   Updated: 2025/03/13 21:10:18 by lumartin         ###   ########.fr       */
+/*   Updated: 2025/03/17 15:29:34 by aldferna         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -141,7 +141,6 @@ int	main(int argc, char **argv, char **env)
 	tokens->content = ft_strdup("0");
 	while (1)
 	{
-
 		line = readline(ft_strjoin(get_env_content(tokens->env_mshell, "PWD"), " ~ "));
 		if (!line)
 			break ;
