@@ -55,6 +55,18 @@ re: fclean all
 
 # TODOLIST
 # revisar si dejamos fd's abiertos
-# el heredoc: expansion: boleano comillas/no comillas en el delimitador---al parsea quitamos comillas
 
-#algun printf en redir quitar
+# HOME= cat << h  --- :0 (?)
+
+# MASS PRUEBAS CON ERROR
+# echo "" hola que "" "" "" "" "" "" "" tal > '$'
+# echo "" hola que "" "" "" "" "" "" "" tal > "hola"
+# echo "" hola que "" "" "" "" "" "" "" tal > hola
+# echo "" hola que "" "" "" "" "" "" "" tal > $USER
+# $USER$USER
+# echo $USER$USER
+# export $E=ech
+# export E=ech
+# export O=o
+# $E$O hola
+# $USE
