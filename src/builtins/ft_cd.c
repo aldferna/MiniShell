@@ -6,162 +6,110 @@
 /*   By: aldferna <aldferna@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 00:14:54 by lumartin          #+#    #+#             */
-/*   Updated: 2025/03/17 15:28:54 by aldferna         ###   ########.fr       */
+/*   Updated: 2025/03/21 14:47:32 by aldferna         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../inc/minishell.h"
 
-static void	print_cd_error(char *path)
+/**
+ * @brief Cambia al directorio OLDPWD del usuario.
+ *
+ * Intenta cambiar al directorio oldpwd definido en la variable de entorno
+ * OLDPWD.
+ * Si OLDPWD no está definido o no se puede acceder al directorio, muestra un
+ * mensaje de error y establece el código de salida adecuado.
+ *
+ * @param tokens Puntero a la estructura de tokens con variables de entorno.
+ */
+static void	cd_to_oldpwd(t_token **tokens)
 {
-	ft_putstr_fd("cd: ", 2);
-	ft_putstr_fd(path, 2);
-	ft_putstr_fd(": No such file or directory\n", 2);
-	exit_num = 1;
-}
+	char	*oldpwd_path;
 
-void	modify_pwd(t_token **tokens, char *dir)
-{
-	t_env	*aux;
-	t_env	*new_var;
-	char	*new_pwd;
-	char	*path;
-
-	if (ft_strncmp(dir, ".", 2) == 0)
-		return ;
-	aux = (*tokens)->env_mshell;
-	while (aux)
+	oldpwd_path = find_env_var((*tokens)->env_mshell, "OLDPWD")->content;
+	if (!oldpwd_path)
 	{
-		if (ft_strncmp(aux->name, "PWD", ft_strlen("PWD")) == 0)
-		{
-			if (ft_strncmp(dir, ".", 1) == 0)
-			{
-				if (getcwd(NULL, 0) == NULL)
-				{
-					ft_putstr_fd("cd: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory\n",
-						2);
-					new_pwd = ft_strjoin(aux->content, ft_strjoin("/", dir));
-					free(aux->content);
-					aux->content = new_pwd;
-					return ;
-				}
-				new_pwd = ft_strdup(getcwd(NULL, 0));
-				free(aux->content);
-				aux->content = new_pwd;
-			}
-			else if (!ft_strncmp(dir, get_env_content((*tokens)->env_mshell,
-						"HOME"), 5))
-			{
-				if (ft_strlen(dir) == ft_strlen(get_env_content((*tokens)->env_mshell,
-							"HOME")))
-					new_pwd = get_env_content((*tokens)->env_mshell, "HOME");
-				else
-					new_pwd = ft_strdup(dir);
-				free(aux->content);
-				aux->content = new_pwd;
-			}
-			else
-			{
-				path = ft_strjoin("/", dir);
-				new_pwd = ft_strjoin(aux->content, path);
-				free(path);
-				free(aux->content);
-				aux->content = new_pwd;
-			}
-			return ;
-		}
-		aux = aux->next;
-	}
-	new_var = malloc(sizeof(t_env));
-	if (!new_var)
+		ft_putstr_fd("cd: OLDPWD not set\n", 2);
+		exit_num = 1;
 		return ;
-	new_var->name = ft_strdup("PWD");
-	path = ft_strjoin("/", dir);
-	new_var->content = ft_strjoin(search_path(join_env((*tokens)->env_mshell),
-				"HOME")[1], path);
-	free(path);
-	if (!new_var->content)
-		return (free(new_var));
-	new_var->next = (*tokens)->env_mshell;
-	(*tokens)->env_mshell = new_var;
+	}
+	if (chdir(oldpwd_path) == 0)
+	{
+		modify_pwd(tokens, oldpwd_path);
+		exit_num = 0;
+	}
+	else
+		print_cd_error(oldpwd_path);
+	free(oldpwd_path);
 }
 
+/**
+ * @brief Cambia al directorio ROOT del usuario.
+ *
+ * Cambia al directorio raíz "/" del sistema de archivos. Si no se puede
+ * acceder al directorio, muestra un mensaje de error y establece el código
+ * de salida adecuado.
+ *
+ * @param tokens Puntero a la estructura de tokens con variables de entorno.
+ * @param args Argumentos del comando (args[0] es "cd").
+ */
+static void	cd_to_root(t_token **tokens, char *args)
+{
+	if (ft_strncmp(args, "///", 3) == 0)
+		args = ft_strdup("/");
+	if (chdir(args) == 0)
+	{
+		modify_pwd(tokens, args);
+		exit_num = 0;
+	}
+	else
+		print_cd_error(args);
+}
+
+/**
+ * @brief Cambia al directorio HOME del usuario.
+ *
+ * Intenta cambiar al directorio home definido en la variable de entorno HOME.
+ * Si HOME no está definido o no se puede acceder al directorio, muestra un
+ * mensaje de error y establece el código de salida adecuado.
+ *
+ * @param tokens Puntero a la estructura de tokens con variables de entorno.
+ */
 static void	cd_to_home(t_token **tokens)
 {
 	char	*home_path;
 	char	*actual_path;
 
-	home_path = get_env_content((*tokens)->env_mshell, "HOME");
+	home_path = find_env_var((*tokens)->env_mshell, "HOME")->content;
 	if (!home_path)
 	{
 		ft_putstr_fd("cd: HOME not set\n", 2);
+		exit_num = 1;
 		return ;
 	}
-	actual_path = get_env_content((*tokens)->env_mshell, "PWD");
+	actual_path = find_env_var((*tokens)->env_mshell, "PWD")->content;
 	if (ft_strncmp(home_path, actual_path, ft_strlen(actual_path)))
 	{
 		if (chdir(home_path) == 0)
+		{
 			modify_pwd(tokens, home_path);
+			exit_num = 0;
+		}
+		else
+			print_cd_error(home_path);
 	}
-	// else
-	// {
-	// 	ft_putstr_fd("cd: ", 2);
-	// 	ft_putstr_fd(home_path, 2);
-	// 	ft_putstr_fd(": No such file or directory\n", 2);
-	// }
 }
 
-static char	*find_path(char **args)
-{
-	char	*path;
-
-	if (args[1][ft_strlen(args[1]) - 1] == '/')
-		path = ft_substr(args[1], 0, ft_strlen(args[1]) - 1);
-	else
-		path = ft_strdup(args[1]);
-	return (path);
-}
-
-char	*find_desired_path(char *pwd, char *dir)
-{
-	char	**components_dir;
-	char	**components_pwd;
-	char	*result;
-	int		levels_up;
-	int		i;
-
-	levels_up = 0;
-	components_dir = ft_split(dir, '/');
-	components_pwd = ft_split(pwd, '/');
-	i = 0;
-	while (components_pwd && components_pwd[i])
-	{
-		if (ft_strncmp(components_pwd[i], "..", 3) == 0)
-			levels_up++;
-		i++;
-	}
-	i = 0;
-	levels_up *= 2;
-	while (components_dir && components_dir[i])
-	{
-		if (ft_strncmp(components_dir[i], "..", 3) == 0)
-			levels_up++;
-		i++;
-	}
-	free_array(components_dir);
-	free_array(components_pwd);
-	i = ft_strlen(pwd);
-	while (i > 0 && levels_up > 0)
-	{
-		if (pwd[i] == '/')
-			levels_up--;
-		i--;
-	}
-	result = ft_substr(pwd, 0, i + 1);
-	return (result);
-}
-
-static int	validate_input(char *input)
+/**
+ * @brief Valida si una ruta contiene solo referencias a directorios superiores.
+ *
+ * Comprueba si la ruta consiste únicamente en componentes ".." (directorios
+ * padre).
+ *
+ * @param input La ruta a validar.
+ * @return int 1 si la ruta solo contiene "..", 0 en caso contrario.
+ */
+int	validate_input_cd(char *input)
 {
 	char	**chop_input;
 	int		i;
@@ -182,64 +130,41 @@ static int	validate_input(char *input)
 	return (0);
 }
 
-static void	handle_broken_pwd(t_token **tokens, char *input_path)
-{
-	char	*desired_path;
-
-	if (!validate_input(input_path))
-	{
-		print_cd_error(input_path);
-		return ;
-	}
-	desired_path = find_desired_path(get_env_content((*tokens)->env_mshell,
-				"PWD"), input_path);
-	if (chdir(desired_path) == 0)
-	{
-		get_env_content_and_replace(tokens, "PWD", desired_path);
-	}
-	else
-	{
-		ft_putstr_fd("cd: error retrieving current directory: getcwd: ", 2);
-		ft_putstr_fd("cannot access parent directories: No such file or directory\n",
-			2);
-		modify_pwd(tokens, input_path);
-	}
-	//free(desired_path);
-}
-
-static void	execute_cd(char *input_path, t_token **tokens)
-{
-	if (getcwd(NULL, 0) == NULL)
-	{
-		handle_broken_pwd(tokens, input_path);
-		return ;
-	}
-	if (chdir(input_path) == 0)
-	{
-		modify_pwd(tokens, input_path);
-		exit_num = 0;
-	}
-	else
-		print_cd_error(input_path);
-}
-
+/**
+ * @brief Implementa el comando cd (change directory).
+ *
+ * Cambia el directorio de trabajo actual al especificado, o al directorio
+ * home si no se proporciona ningún argumento. Actualiza la variable de
+ * entorno PWD después de un cambio exitoso.
+ *
+ * @param args Argumentos del comando (args[0] es "cd").
+ * @param tokens Puntero a la estructura de tokens con variables de entorno.
+ */
 void	ft_cd(char **args, t_token **tokens)
 {
 	char	*path;
 
-	if (!args[1])
-	{
+	if (!args[1] || ft_strncmp(args[1], "~", 2) == 0 || ft_strncmp(args[1],
+			"--", 3) == 0)
 		cd_to_home(tokens);
-	}
+	else if (match_string(args[1], "/") || ft_strncmp(args[1], "//", 2) == 0)
+		cd_to_root(tokens, args[1]);
+	else if (match_string(args[1], "-") == 1)
+		cd_to_oldpwd(tokens);
 	else if (args[1] && args[2])
 	{
 		exit_num = 1;
 		ft_putstr_fd("cd: too many arguments\n", 2);
-		return ;
 	}
 	else
 	{
 		path = find_path(args);
-		execute_cd(path, tokens);
+		if (getcwd(NULL, 0) == NULL)
+			handle_broken_pwd(tokens, path);
+		else if (chdir(path) == 0)
+			modify_pwd(tokens, path);
+		else
+			print_cd_error(path);
+		free(path);
 	}
 }

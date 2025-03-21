@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   pipex.c                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lumartin <lumartin@student.42madrid.com    +#+  +:+       +#+        */
+/*   By: aldferna <aldferna@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/31 13:49:00 by aldferna          #+#    #+#             */
-/*   Updated: 2025/03/13 21:34:52 by lumartin         ###   ########.fr       */
+/*   Updated: 2025/03/21 19:21:31 by aldferna         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,11 +28,11 @@ int	num_pipes(char *str)
 	return (count);
 }
 
-void modify_shlvl(t_token **tokens, char *var)
+void	modify_shlvl(t_token **tokens, char *var)
 {
-	t_env *aux;
-	t_env *new_var;
-	int shlvl;
+	t_env	*aux;
+	t_env	*new_var;
+	int		shlvl;
 
 	aux = (*tokens)->env_mshell;
 	while (aux)
@@ -42,14 +42,14 @@ void modify_shlvl(t_token **tokens, char *var)
 			shlvl = ft_atoi(aux->content) + 1;
 			free(aux->content);
 			aux->content = ft_itoa(shlvl);
-			return;
+			return ;
 		}
 		aux = aux->next;
 	}
 	shlvl = 1;
 	new_var = malloc(sizeof(t_env));
 	if (!new_var)
-		return;
+		return ;
 	new_var->name = ft_strdup(var);
 	new_var->content = ft_itoa(shlvl);
 	new_var->next = (*tokens)->env_mshell;
@@ -58,11 +58,11 @@ void modify_shlvl(t_token **tokens, char *var)
 
 int	middle_command(int *count, t_token **tokens, int fd_in)
 {
-	int 	fds[2];
+	int		fds[2];
 	int		connect[2];
-	char 	**args;
+	char	**args;
 	pid_t	pid;
-	int original_stdout;
+	int		original_stdout;
 
 	fds[0] = STDIN_FILENO;
 	fds[1] = STDOUT_FILENO;
@@ -70,7 +70,6 @@ int	middle_command(int *count, t_token **tokens, int fd_in)
 	args = build_command_string((*tokens), count);
 	if (!args || !args[0])
 		return (ERROR);
-
 	if (pipe(connect) == -1)
 	{
 		perror("pipe");
@@ -115,20 +114,20 @@ int	middle_command(int *count, t_token **tokens, int fd_in)
 		if (is_builtin(args) == 1)
 		{
 			handle_builtin(args, (*tokens));
-			exit (0);
+			// exit (0);
 		}
 		else
 		{
 			exe((*tokens), args, original_stdout);
-			exit(EXIT_FAILURE);
+			// exit(EXIT_FAILURE);
 		}
 	}
 	free_array(args);
 	close(connect[1]);
 	if (fds[0] != STDIN_FILENO)
-			close(fds[0]);
+		close(fds[0]);
 	if (fds[1] != STDOUT_FILENO)
-			close(fds[1]);
+		close(fds[1]);
 	close(fd_in);
 	return (connect[0]);
 }
@@ -136,10 +135,10 @@ int	middle_command(int *count, t_token **tokens, int fd_in)
 void	final_command(int *count, t_token **tokens, int fd_in)
 {
 	pid_t	pid;
-	int 	fds[2];
-	char 	**args;
+	int		fds[2];
+	char	**args;
 	int		original_stdout;
-	int		status;
+	int status;
 
 	fds[0] = STDIN_FILENO;
 	fds[1] = STDOUT_FILENO;
@@ -148,7 +147,7 @@ void	final_command(int *count, t_token **tokens, int fd_in)
 	if (!args || !args[0])
 		return ;
 	signals('c');
-	if (ft_strncmp(args[0] , "./minishell", 12) == 0)
+	if (ft_strncmp(args[0], "./minishell", 12) == 0)
 		ign_signal();
 	pid = fork();
 	if (pid == -1)
@@ -165,7 +164,7 @@ void	final_command(int *count, t_token **tokens, int fd_in)
 		if (fd_in < 0)
 		{
 			perror("error output file");
-			exit(7);
+			exit(1);
 		}
 		original_stdout = dup(STDOUT_FILENO);
 		if (fds[1] != STDOUT_FILENO)
@@ -182,12 +181,11 @@ void	final_command(int *count, t_token **tokens, int fd_in)
 		{
 			handle_builtin(args, *tokens);
 			close(fds[1]);
-			exit(0);
+			exit(exit_num);
 		}
 		else
 		{
 			exe((*tokens), args, original_stdout);
-			exit(EXIT_FAILURE);
 		}
 	}
 	waitpid(pid, &status, 0); 
@@ -203,15 +201,15 @@ int	first_command(t_token **tokens, int num_commands, int *count)
 	int		connect[2];
 	char	**args;
 	pid_t	pid;
-	int 	i;
+	int		i;
 	int		original_stdin;
 	int		original_stdout;
-	int status;
+	int		status;
 
 	fds[0] = STDIN_FILENO;
 	fds[1] = STDOUT_FILENO;
-	setup_redirections(*tokens, &fds, *count); //tokens
-	args = build_command_string(*tokens, count); //tokens
+	setup_redirections(*tokens, &fds, *count);
+	args = build_command_string(*tokens, count);
 	if (!args || !args[0])
 		return (ERROR);
 	if (is_builtin(args) == 1 && num_commands == 1)
@@ -228,7 +226,7 @@ int	first_command(t_token **tokens, int num_commands, int *count)
 			original_stdout = dup(STDOUT_FILENO);
 			dup2(fds[1], STDOUT_FILENO);
 		}
-		handle_builtin(args, *tokens); //tokens
+		handle_builtin(args, *tokens);
 		if (original_stdin != -1)
 		{
 			dup2(original_stdin, STDIN_FILENO);
@@ -239,7 +237,7 @@ int	first_command(t_token **tokens, int num_commands, int *count)
 			dup2(original_stdout, STDOUT_FILENO);
 			close(original_stdout);
 		}
-		if (fds[0] != STDIN_FILENO) //arriba
+		if (fds[0] != STDIN_FILENO)
 			close(fds[0]);
 		if (fds[1] != STDOUT_FILENO)
 			close(fds[1]);
@@ -252,7 +250,7 @@ int	first_command(t_token **tokens, int num_commands, int *count)
 	if (num_commands == 1)
 	{
 		signals('c');
-		if (ft_strncmp(args[0] , "./minishell", 12) == 0)
+		if (ft_strncmp(args[0], "./minishell", 12) == 0)
 			ign_signal();
 		pid = fork();
 		if (pid == -1)
@@ -262,7 +260,8 @@ int	first_command(t_token **tokens, int num_commands, int *count)
 		}
 		else if (pid == 0) // Proceso hijo
 		{
-			if (ft_strncmp(args[0] , "./minishell", 12) == 0)
+			printf("hijo PID %d, padre PID %d\n", getpid(), getppid());
+			if (ft_strncmp(args[0], "./minishell", 12) == 0)
 				modify_shlvl(tokens, "SHLVL");
 			original_stdout = dup(STDOUT_FILENO);
 			if (fds[0] != STDIN_FILENO)
@@ -276,7 +275,7 @@ int	first_command(t_token **tokens, int num_commands, int *count)
 				close(fds[1]);
 			}
 			exe((*tokens), args, original_stdout);
-			exit(EXIT_FAILURE);
+			exit(exit_num);
 		}
 		i = 0;
 		while (args[i])
@@ -286,6 +285,7 @@ int	first_command(t_token **tokens, int num_commands, int *count)
 			close(fds[0]);
 		if (fds[1] != STDOUT_FILENO)
 			close(fds[1]);
+		printf("padre PID %d, su hijo es PID %d\n", getpid(), pid);
 		waitpid(pid, &status, 0);
 		exit_num = WEXITSTATUS(status);
 		signals('f');
@@ -298,7 +298,7 @@ int	first_command(t_token **tokens, int num_commands, int *count)
 			perror("pipe");
 			return (ERROR);
 		}
-		if (ft_strncmp(args[0] , "./minishell", 12) == 0)
+		if (ft_strncmp(args[0], "./minishell", 12) == 0)
 		{
 			close(connect[1]);
 			return (connect[0]);
@@ -331,12 +331,12 @@ int	first_command(t_token **tokens, int num_commands, int *count)
 			{
 				handle_builtin(args, *tokens);
 				close(fds[1]);
-				exit(0);
+				exit(exit_num);
 			}
 			else
 			{
 				exe((*tokens), args, original_stdout);
-				exit(EXIT_FAILURE);
+				// exit(exit_num);
 			}
 		}
 		free_array(args);

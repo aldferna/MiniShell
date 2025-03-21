@@ -12,12 +12,16 @@ SRC = src/main.c \
 	src/exe.c \
 	src/builtins/builtins.c \
 	src/builtins/ft_cd.c \
+	src/builtins/ft_cd_utils.c \
 	src/builtins/ft_echo.c \
 	src/builtins/ft_env.c \
 	src/builtins/ft_exit.c \
 	src/builtins/ft_export.c \
+	src/builtins/ft_export_utils.c \
 	src/builtins/ft_pwd.c \
 	src/builtins/ft_unset.c \
+	src/builtins/modify_pwd.c \
+	src/builtins/modify_pwd_utils.c \
 
 INCLUDE = -I libft -I.
 
@@ -53,20 +57,13 @@ re: fclean all
 # leaks con: echo hola
 # echo $?
 
-# TODOLIST
-# revisar si dejamos fd's abiertos
+# MASS PRUEBAS CON ERROR:
 
-# HOME= cat << h  --- :0 (?)
+#tenemos un problema con hacer el heredoc en un hijo... se hace un doble/triple/etc.. hijo;(((( -->prueba varios << y luego control d
 
-# MASS PRUEBAS CON ERROR
-# echo "" hola que "" "" "" "" "" "" "" tal > '$'
-# echo "" hola que "" "" "" "" "" "" "" tal > "hola"
-# echo "" hola que "" "" "" "" "" "" "" tal > hola
-# echo "" hola que "" "" "" "" "" "" "" tal > $USER
-# $USER$USER
-# echo $USER$USER
-# export $E=ech
-# export E=ech
-# export O=o
-# $E$O hola
-# $USE
+#--------------------cosas de las q podriamos pasar:
+
+#echo $"$'$PWD'"  (bash: $'/home/aldferna/Desktop/MiniShell') (mshell: $$'/home/aldferna/Desktop/MiniShell')
+
+# export q="ls -la"
+# $q  (esto bash lo hace, pero me ha dicho que el 50% de las mini no lo hacen)

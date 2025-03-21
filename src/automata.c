@@ -6,7 +6,7 @@
 /*   By: aldferna <aldferna@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/26 18:17:47 by lumartin          #+#    #+#             */
-/*   Updated: 2025/03/17 18:54:59 by aldferna         ###   ########.fr       */
+/*   Updated: 2025/03/21 19:05:16 by aldferna         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,9 @@ int	automata(t_token *tokens)
 	char	*elements[9] = {"command", "flag", "|", "newline", "newline",
 			"newline", "newline", "err"};
 
-	tokens = tokens->next;
+	if (tokens->next == NULL)
+		return (0);
+	tokens = tokens->next; // cat | -l
 	int automata[6][8] = {
 		{1, 5, 5, 3, 3, 3, 3, 2}, // inicial
 		{2, 1, 4, 3, 3, 3, 3, 1}, // comando
@@ -117,7 +119,7 @@ int find_the_dollar(char *str)
 		i++;
 	}
 	return 1;
-}
+} 
 
 void write_in_pipe(char *content, int *fd)
 {
@@ -149,19 +151,23 @@ void	handle_heredoc(char **eof, int *fd, t_token *tokens)
 		write_in_pipe("", fd);
 		return;
 	}
-	printf("token con el que entra: %s\n", tokens->next->next->next->content); //Y SI: echo hey | cat << "h"
-	printf("valor de quotes: %d\n", tokens->next->next->next->quotes);
-	if (find_the_dollar(line) == SUCCESS && tokens->next->next->next->quotes == 0)
-		expand_in_heredoc(&line, tokens);
+	if (tokens->next->next->next)
+	{
+		if (find_the_dollar(line) == SUCCESS && tokens->next->next->next->quotes == 0)
+			expand_in_heredoc(&line, tokens);
+	}
 	r_lines = ft_strjoin(line, "\n");
 	while ((ft_strlen(line) != ft_strlen(*eof)) || ft_strcmp(line, *eof) != 0)
 	{
 		free(line);
 		line = readline("> ");
-		if (!line || ft_strcmp(line, *eof) == 0)
+		if (!line || ft_strncmp(line, *eof, ft_strlen(*eof) + 1) == 0)
 			break;
-		if (find_the_dollar(line) == SUCCESS && tokens->next->next->next->quotes == 0)
-			expand_in_heredoc(&line, tokens);
+		if (tokens->next->next->next)
+		{
+			if (find_the_dollar(line) == SUCCESS && tokens->next->next->next->quotes == 0)
+				expand_in_heredoc(&line, tokens);	
+		}
 		temp = ft_strjoin(r_lines, line);
 		free(r_lines);
 		r_lines = ft_strjoin(temp, "\n");
@@ -176,11 +182,13 @@ void	setup_redirections(t_token *tokens, int (*fds)[2], int count)
 {
 	int	new_fd;
 	int	aux_move;
+	pid_t	pid;
+    int status;
 
 	t_token *temp_tokens; // probar sin temporal
 	temp_tokens = tokens->next;
 	aux_move = count;
-	while (aux_move > 0)
+	while (aux_move > 0) //&& temp_tokens->type
 	{
 		if (temp_tokens->type == T_PIPE)
 			aux_move--;
@@ -228,7 +236,22 @@ void	setup_redirections(t_token *tokens, int (*fds)[2], int count)
 		}
 		else if (temp_tokens->type == T_HERE_DOC && temp_tokens->next)
 		{
-			handle_heredoc(&temp_tokens->next->content, fds[0], tokens);
+			ign_signal();
+			pid = fork();
+			if (pid == -1)
+			{
+				perror("fork");
+				return ;
+			}
+			else if (pid == 0)
+			{
+				printf("H: hijo %d, padre %d\n", getpid(), getppid());
+				signals('h');
+				handle_heredoc(&temp_tokens->next->content, fds[0], tokens);
+			}
+			waitpid(pid, &status, 0);
+			printf("H: padre %d, su hijo es %d\n", getpid(), pid);
+			signals('f');
 		}
 		else if (temp_tokens && temp_tokens->type == T_PIPE)
 			break ;
@@ -236,7 +259,7 @@ void	setup_redirections(t_token *tokens, int (*fds)[2], int count)
 	}
 }
 
-int	count_args(t_token *tokens)
+static int	count_args_aut(t_token *tokens)
 {
 	int	count;
 
@@ -263,13 +286,13 @@ char	**build_command_string(t_token *tokens, int *count)
 	t_token *temp_tokens; // esto se podria quitar
 	temp_tokens = tokens->next;
 	aux_move = (*count);
-	while (aux_move > 0)
+	while (aux_move > 0) // && temp_tokens->type
 	{
 		if (temp_tokens->type == T_PIPE)
 			aux_move--;
 		temp_tokens = temp_tokens->next;
 	}
-	num_args = count_args(temp_tokens);
+	num_args = count_args_aut(temp_tokens);
 	args = malloc((num_args + 1) * sizeof(char *));
 	if (!args)
 		return (NULL);

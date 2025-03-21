@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aldferna <aldferna@student.42.fr>          +#+  +:+       +#+        */
+/*   By: lumartin <lumartin@student.42madrid.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/20 15:24:32 by lumartin          #+#    #+#             */
-/*   Updated: 2025/03/17 17:38:28 by aldferna         ###   ########.fr       */
+/*   Updated: 2025/03/20 13:01:03 by lumartin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,10 +21,10 @@
 # include <stdio.h>
 # include <stdlib.h>
 # include <string.h>
+# include <sys/stat.h>
 # include <sys/types.h>
 # include <sys/wait.h>
 # include <unistd.h>
-# include <sys/stat.h>
 
 extern unsigned char	exit_num;
 
@@ -56,6 +56,7 @@ typedef struct s_env
 typedef struct s_token
 {
 	t_env				*env_mshell;
+	t_env				*exp_var;
 	t_token_value		type;
 	char				*content;
 	int					quotes;
@@ -82,6 +83,7 @@ int						ft_len_var_name(char *str, int i);
 
 // ENV
 t_env					*env_buildin(char **env);
+t_env					*find_env_var(t_env *env, char *var_name);
 
 // EXE
 char					**join_env(t_env *env_mshell);
@@ -105,6 +107,23 @@ void					ft_exit(char **arg);
 void					ft_export(t_token *tokens, char **args);
 void					ft_pwd(t_token *tokens);
 void					ft_unset(t_token *tokens, char **args);
+void					modify_pwd(t_token **tokens, char *dir);
+
+// CD_UTILS
+void					print_cd_error(char *path);
+void					handle_broken_pwd(t_token **tokens, char *input_path);
+int						validate_input_cd(char *input);
+char					*find_path(char **args);
+
+// EXPORT_UTILS
+int						is_valid_var_name(char *name);
+char					*extract_var_name(char *arg);
+void					print_env_as_export(t_token *tokens);
+void					handle_add_var(t_token *tokens, t_env *new_env,
+							char *content);
+
+// MODIFY_PWD_UTILS
+void					create_new_pwd(t_token **tokens, char *dir);
 
 //	SIGNALS
 void					signals(char c);
@@ -114,11 +133,13 @@ int						main2(char *string, t_token *tokens);
 
 void					print_2(char **str);
 void					free_array(char **array);
+void					handle_signal_heredoc(int sig);
 
 // UTILS
-char					*get_pwd(t_token *tokens);
-char					*get_env_content(t_env *env, char *name);
-void					get_env_content_and_replace(t_token **tokens, char *name,
-							char *content);
+void					get_env_content_and_replace(t_token **tokens,
+							char *name, char *content);
+int						count_args(char **args);
+int						match_string(char *str1, char *str2);
+char					*handle_env_var(char *str, t_token *tokens);
 
 #endif
