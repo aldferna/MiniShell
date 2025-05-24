@@ -28,6 +28,6 @@ make
 ```
 3. Run the program:
 ```c
-./push_swap
+./minishell
 ```
 4. Execute commands.
