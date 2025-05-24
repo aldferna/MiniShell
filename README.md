@@ -3,6 +3,7 @@
 ## Minishell 👑
 
 Minishell is a project designed to give you hands-on experience in building a simplified shell that allows users to interact with the operating system through a command-line interface.   
+This project was build in collaboration with [Luis Martín](https://github.com/luuismrtn).
 
 ### Features:
 * Display a prompt when waiting for a new command.  
@@ -14,3 +15,19 @@ Minishell is a project designed to give you hands-on experience in building a si
 * Handle exit status with $?  
 * Handle signals: 'ctrl-C', 'ctrl-\', 'ctrl-D'.  
 * Implement builtins: 'cd', 'pwd', 'echo', 'exit', 'unset', 'export, 'env'.  
+
+## How to use:
+
+1. Clone the repository:
+```c
+git clone https://github.com/aldferna/MiniShell.git
+```
+2. Compile the project:
+```c
+make
+```
+3. Run the program:
+```c
+./push_swap
+```
+4. Execute commands.
