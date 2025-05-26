@@ -1,4 +1,4 @@
-# 42 Campus
+# 42 Cursus
 
 ## Minishell 👑
 
