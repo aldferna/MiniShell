@@ -8,9 +8,10 @@ This project was build in collaboration with [Luis Martín](https://github.com/l
 ### Features:
 * Display a prompt when waiting for a new command.  
 * Have a working history.  
-* Search and launch the right executable(using relative path, absolute path or just the the name of the command)  
+* Search and launch the right executable (using relative path, absolute path or just the the name of the command) supporting multiple arguments.  
 * Implement redirections: '<', '>', '<<', '>>'.  
-* Implement pipes.  
+* Implement pipes.
+* Implement the use of quotes " and '.
 * Handle environment variables.  
 * Handle exit status with $?  
 * Handle signals: 'ctrl-C', 'ctrl-\', 'ctrl-D'.  
