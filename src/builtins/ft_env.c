@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ft_env.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aldferna <aldferna@student.42.fr>          +#+  +:+       +#+        */
+/*   By: lumartin <lumartin@student.42madrid.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 00:17:16 by lumartin          #+#    #+#             */
-/*   Updated: 2025/03/21 15:08:01 by aldferna         ###   ########.fr       */
+/*   Updated: 2025/04/09 15:01:47 by lumartin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,9 +65,42 @@ void	get_env_content_and_replace(t_token **tokens, char *name, char *content)
 }
 
 /**
+ * @brief Inicializa la estructura principal del shell.
+ *
+ * Asigna memoria para la estructura principal del shell y la inicializa
+ * con valores predeterminados. Crea una lista de variables de entorno
+ * a partir del array proporcionado.
+ *
+ * @param env Array de strings con las variables de entorno.
+ * @return t_token* Puntero a la estructura principal del shell, NULL si falla
+ */
+t_token	*initialize_shell(char **env, char **vars, char *argv)
+{
+	t_token	*tokens;
+
+	tokens = malloc(sizeof(t_token));
+	if (!tokens)
+		return (NULL);
+	ft_memset(tokens, 0, sizeof(t_token));
+	if (!env || !env[0])
+		tokens->env_mshell = make_little_env();
+	else
+		tokens->env_mshell = env_buildin(env);
+	if (vars)
+		tokens->exp_var = env_buildin(vars);
+	else
+		tokens->exp_var = NULL;
+	tokens->name_prog = argv;
+	tokens->content = NULL;
+	signals('f');
+	return (tokens);
+}
+
+/**
  * @brief Implementa el comando env.
  *
- * Muestra todas las variables de entorno definidas en el formato "nombre=valor",
+ * Muestra todas las variables de entorno definidas en el formato
+ * "nombre=valor",
  * una por línea. Solo muestra variables que tienen valor asignado
  * (content no nulo).
  *

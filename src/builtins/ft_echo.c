@@ -3,14 +3,38 @@
 /*                                                        :::      ::::::::   */
 /*   ft_echo.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aldferna <aldferna@student.42.fr>          +#+  +:+       +#+        */
+/*   By: lumartin <lumartin@student.42madrid.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 00:14:16 by lumartin          #+#    #+#             */
-/*   Updated: 2025/03/21 17:37:00 by aldferna         ###   ########.fr       */
+/*   Updated: 2025/04/08 22:03:27 by lumartin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../inc/minishell.h"
+
+/**
+ * @brief Verifica si un argumento es una opción -n válida.
+ *
+ * Una opción -n válida comienza con '-' seguida de una o más 'n'.
+ *
+ * @param arg El argumento a verificar.
+ * @return 1 si es una opción -n válida, 0 en caso contrario.
+ */
+static int	is_n_option(char *arg)
+{
+	int	i;
+
+	if (!arg || arg[0] != '-')
+		return (0);
+	i = 1;
+	while (arg[i])
+	{
+		if (arg[i] != 'n')
+			return (0);
+		i++;
+	}
+	return (i > 1);
+}
 
 /**
  * @brief Imprime los argumentos del comando echo.
@@ -27,13 +51,13 @@ static void	print_echo(char **args, int n, int i)
 {
 	while (args[i])
 	{
-		ft_putstr_fd(args[i], 1);
+		ft_putstr_fd(args[i], STDOUT_FILENO);
 		if (args[i + 1])
-			ft_putchar_fd(' ', 1);
+			ft_putchar_fd(' ', STDOUT_FILENO);
 		i++;
 	}
 	if (!n)
-		ft_putchar_fd('\n', 1);
+		ft_putchar_fd('\n', STDOUT_FILENO);
 }
 
 /**
@@ -47,6 +71,8 @@ static void	print_echo(char **args, int n, int i)
  * - "echo" → Muestra solo un salto de línea
  * - "echo texto" → Muestra "texto" seguido de un salto de línea
  * - "echo -n texto" → Muestra "texto" sin salto de línea
+ * - "echo -nn texto" → Muestra "texto" sin salto de línea
+ * - "echo -n -n texto" → Muestra "texto" sin salto de línea
  * - "echo arg1 arg2 ..." → Muestra los argumentos separados por espacios
  *
  * @param args Array de argumentos del comando (args[0] es "echo").
@@ -61,16 +87,13 @@ void	ft_echo(char **args)
 		ft_putchar_fd('\n', 1);
 		return ;
 	}
-	if (ft_strncmp(args[1], "-n", 3) == 0)
+	i = 1;
+	n = 0;
+	while (args[i] && is_n_option(args[i]))
 	{
 		n = 1;
-		i = 2;
-	}
-	else
-	{
-		n = 0;
-		i = 1;
+		i++;
 	}
 	print_echo(args, n, i);
-	exit_num = 0;
+	g_exit_num = 0;
 }

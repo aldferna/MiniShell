@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ft_cd_utils.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aldferna <aldferna@student.42.fr>          +#+  +:+       +#+        */
+/*   By: lumartin <lumartin@student.42madrid.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/18 11:49:21 by lumartin          #+#    #+#             */
-/*   Updated: 2025/03/21 15:12:04 by aldferna         ###   ########.fr       */
+/*   Updated: 2025/04/04 16:54:22 by lumartin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,23 +79,6 @@ static char	*find_desired_path(char *pwd, char *dir)
 }
 
 /**
- * @brief Muestra un mensaje de error para el comando cd.
- *
- * Imprime un mensaje de error estandarizado para el comando cd cuando
- * una ruta no es válida o accesible. También establece el código de salida
- * en 1 para indicar que ocurrió un error.
- *
- * @param path La ruta que causó el error.
- */
-void	print_cd_error(char *path)
-{
-	ft_putstr_fd("cd: ", 2);
-	ft_putstr_fd(path, 2);
-	ft_putstr_fd(": No such file or directory\n", 2);
-	exit_num = 1;
-}
-
-/**
  * @brief Maneja el caso donde getcwd() falla pero necesitamos cambiar de
  * directorio.
  *
@@ -109,38 +92,28 @@ void	print_cd_error(char *path)
 void	handle_broken_pwd(t_token **tokens, char *input_path)
 {
 	char	*desired_path;
-				t_env	*current;
+	t_env	*current;
+	char	*cwd;
 
 	if (!validate_input_cd(input_path))
-	{
-		print_cd_error(input_path);
-		return ;
-	}
+		return (print_cd_error(input_path, NULL, NULL));
 	desired_path = find_desired_path(find_env_var((*tokens)->env_mshell,
 				"PWD")->content, input_path);
 	if (chdir(desired_path) == 0)
 	{
-		get_env_content_and_replace(tokens, "PWD", desired_path);
-
+		cwd = getcwd(NULL, 0);
+		get_env_content_and_replace(tokens, "PWD", cwd);
 		current = (*tokens)->env_mshell;
 		while (current)
 		{
 			if (ft_strncmp(current->name, "PWD", ft_strlen("PWD")) == 0)
-			{
-				printf("content PWD: %s\n", current->content);
 				break ;
-			}
 			current = current->next;
 		}
 	}
 	else
-	{
-		ft_putstr_fd("cd: error retrieving current directory: getcwd: ", 2);
-		ft_putstr_fd("cannot access parent directories: ", 2);
-		ft_putstr_fd("No such file or directory\n", 2);
-		modify_pwd(tokens, input_path);
-	}
-	//free(desired_path); esto daba problema cd encuentra el dir q existe
+		print_cd_error(NULL, tokens, input_path);
+	free(desired_path);
 }
 
 /**
@@ -162,4 +135,33 @@ char	*find_path(char **args)
 	else
 		path = ft_strdup(args[1]);
 	return (path);
+}
+
+/**
+ * @brief Maneja el comando cd (cambiar directorio).
+ *
+ * Esta función cambia el directorio de trabajo actual al especificado
+ * en los argumentos. Si el directorio no es accesible, maneja el error.
+ *
+ * @param tokens Doble puntero a la lista de tokens.
+ * @param args Array de argumentos del comando.
+ */
+void	handle_cd(t_token **tokens, char **args)
+{
+	char	*path;
+	char	*cwd;
+
+	cwd = getcwd(NULL, 0);
+	path = find_path(args);
+	if (cwd == NULL)
+		handle_broken_pwd(tokens, path);
+	else if (chdir(path) == 0)
+	{
+		free(cwd);
+		cwd = getcwd(NULL, 0);
+		modify_pwd(tokens, cwd);
+	}
+	else
+		print_cd_error(path, NULL, NULL);
+	return (free(cwd), free(path));
 }

@@ -6,7 +6,7 @@
 /*   By: lumartin <lumartin@student.42madrid.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 00:16:14 by lumartin          #+#    #+#             */
-/*   Updated: 2025/03/20 21:19:17 by lumartin         ###   ########.fr       */
+/*   Updated: 2025/04/09 15:02:24 by lumartin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@
  * @param name Nombre de la nueva variable a añadir.
  * @param content Contenido de la variable (o NULL si no tiene valor).
  */
-static void	add_env_var(t_token *tokens, char *name, char *content)
+void	add_env_var(t_token *tokens, char *name, char *content)
 {
 	t_env	*new_env;
 
@@ -33,7 +33,7 @@ static void	add_env_var(t_token *tokens, char *name, char *content)
 		return ;
 	new_env->name = ft_strdup(name);
 	if (content || find_env_var(tokens->env_mshell, name))
-		handle_add_var(tokens, new_env, content);
+		handle_add_var(tokens, new_env, remove_consec_spaces(content));
 	else
 	{
 		if (find_env_var(tokens->exp_var, name))
@@ -65,7 +65,7 @@ static void	process_assignment(t_token *tokens, char *arg)
 	if (current)
 	{
 		free(current->content);
-		current->content = ft_strdup(var_content);
+		current->content = remove_consec_spaces(var_content);
 	}
 	else
 		add_env_var(tokens, var_name, var_content);
@@ -118,7 +118,7 @@ static int	check_args(char **args)
 			ft_putstr_fd("export: `", 2);
 			ft_putstr_fd(args[i], 2);
 			ft_putstr_fd("': not a valid identifier\n", 2);
-			exit_num = 1;
+			g_exit_num = 1;
 			result = ERROR;
 		}
 		free(var_name);

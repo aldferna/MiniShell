@@ -1,0 +1,236 @@
+PIPEX
+cat | cat | ls (hace el ls, tras dos enter cierra)
+exit 3 | ls (hace ls)
+exit 5 | ls (echo $? = 0)
+sdffggb | sleep 1 (echo $? = 0)
+sleep 1  | sdfg (echo $? = 127)
+exit 5 |exit 4 | exit 3 (echo $? = 3)
+pwd | cat | cat -e >3 | wc -l (bash: 0 y crea 3 con print dwl pwd) (mshell: hace el pwd y no crea 3)
+#bash-3.2$ echo < 1 | echo < 2 | echo < 3
+    bash: echo: write error: Broken pipe
+# env | sort | grep -v SHLVL | grep -v ^_ 
+    # mini exit code = 139
+    # bash exit code = 0
+    # mini error = ( Broken pipe)
+    # bash error = ()
+# cat minishell.h | grep ");"$ 
+    # mini exit code = 0
+    # bash exit code = 1
+#error si redireccion sin comando y luego pipe::>>
+# /home/aldferna/Desktop/MiniShell ~ << eof | ls -l
+    # ls: write error: Bad file descriptor
+# /home/aldferna/Desktop/MiniShell ~ < file | cat > file1
+#< file | cat
+#> output.txt | cat
+#< input.txt > output.txt | cat
+# error: catsrttgt Makefile > hola.txt
+#echo hi > ./hola/outfile | echo bye
+cat < missing | echo hi
+cat < missing | cat Makefile
+cat <missing | cat
+cat < a < b <<e (fd no ceerrado)
+
+
+EXPORT
+export p="ls -l" --> ejecutar $p (funciona)
+#si hacemos export a y luego export a=hola (tenemos dos variables a, y el unset solo quita la del =)
+#export a
+    #./minishell
+    #se queda como sin env
+# export a=hola
+    # export a=$a:/home  (esto tendria que expandir a hola:/home)
+# export 234=h (ok da error)
+    # export E234=h (da error pero si que debe exportarlo)
+# export $E=ech
+# export E=ech
+# export O=o
+# $E$O hola
+# si solo 'export' imprimir las variables exportadas
+
+
+
+HEREDOC
+Con control c tiene que salir
+Hacer varios heredocs acabados con control C y luego control D... varios hijos?
+#<<eof cat | ls (bash pilla eof como delimitador y al acabar heredoc hace ls) 
+    #(mshell pilla: eofcat como delimit y al cerrar se queda en el aire)
+    #<<eof cat | cat -e | cat -e (igual)
+    #<<eof cat | cat (igual)
+No expansion delimitador con comillas
+# aldferna@c2r9s3:~/Desktop/MiniShell$ cat << l'e't
+    # > $HOME
+    # > let
+    # $HOME
+# /home/aldferna/Desktop/MiniShell ~ cat << $HOME
+    # > hola
+    # > $HOME
+    # hola
+    # /home/aldferna
+# /home/aldferna/Desktop/MiniShell ~ << $A   (no para, probablemente expandde el eof)
+    # > hola
+    # > $A
+    # > $A
+    # > 
+# /home/aldferna/Desktop/MiniShell ~ cat << $A (heap use after free)
+    # > $A
+# el heredoc: expansion: boleano comillas/no comillas en el delimitador
+# cat << h (solo expande la ultima)
+    # > $? $USER $PWD
+    # > h
+    # $? $USER /home/aldferna/Desktop/MiniShell
+
+
+
+ECHO
+echo $? actualizado
+# echo '' --> exit code = 0
+
+
+
+EXIT
+#exit ajkjga asjdgdakjfv (que de numeric argument required, exit 2 y si que sale)
+    exit 5 wsh (too many arguments)
+# exit -100 --> exit code = 156
+
+
+
+CD
+# cd $PWD hi --> too many arguments
+bash:
+    aldferna@c2r7s6:~$ cd ../aldferna/..
+    aldferna@c2r7s6:/home$ 
+crear dir, meterse y luego salir, (encontrar el path)
+#/home/aldferna/Desktop/MiniShell ~ cd
+    #free(): double free detected in tcache 2
+    #[3]    2212968 IOT instruction (core dumped)  ./minishell
+#cd - (OLDPWD)
+#cd ~ (HOME)
+#cd // (ROOT)
+#cd -- (no args)
+#cd este implementado probar si hay un dir '-'
+# ➜  MiniShell git:(main) ✗ make && ./minishell
+    # /home/aldferna/Desktop/MiniShell ~ cd
+    # /home/aldferna ~ ^C
+    # /home/aldferna ~ cd -
+    # double free or corruption (fasttop)
+    # [1]    2844121 IOT instruction (core dumped)  ./minishell
+/home/aldferna/Desktop/MiniShell ~ cd -
+    /home/aldferna/Desktop/MiniShell/ ~ cd src
+    /home/aldferna/Desktop/MiniShell//src ~ cd -
+    cd: /home/aldferna/Desktop/MiniShell/: No such file or directory
+# ➜  MiniShell git:(main) ✗ make && ./minishell
+    # /home/aldferna/Desktop/MiniShell ~ cd -
+    # �m ~ 
+#escribe siempre que se hace cd (OKK)
+    #/home/aldferna/Desktop/MiniShell ~ cd
+    #/home/aldferna/Desktop/MiniShell//home/aldferna ~ cd
+    #/home/aldferna/Desktop/MiniShell//home/aldferna//home/aldferna ~ cd
+#borra una de mas cd ../../../
+    #/home/aldferna/Desktop/MiniShell/1/2/3 ~ cd ../../../
+    #/home/aldferna/Desktop ~ ls
+    #1  inc  libft  Makefile  minishell  src
+# cd .. hasta que si existe, entonces actualiza el pwd (no sigue añadiendo ../, ni da error)
+    #/home/aldferna/Desktop/MiniShell/1/2/3/.../../../../../../../../../../../.. ~ cd
+    #/home/aldferna/Desktop/MiniShell/1/2/3/.../../../../../../../../../../../..//home/aldferna ~ cd
+    #/home/aldferna/Desktop/MiniShell/1/2/3/.../../../../../../../../../../../..//home/aldferna//home/aldferna ~ pwd
+    #/home/aldferna
+#dar error si mas de dos puntoooos:
+    #/home/aldferna/Desktop/MiniShell/1/2/3/.../../
+#refrescar $PWD cuando se hace cd
+
+
+
+SEÑALES
+/home/aldferna/Desktop/MiniShell ~ cat | cat | ls
+    errors.txt  inc  libft  Makefile  minishell  src
+    ^C
+    /home/aldferna/Desktop/MiniShell ~ cat | cat | ls/home/aldferna/Desktop/MiniShell ~ 
+# señal control-c cd se ejecuta minishell dentro de minishell
+# segfault al hacer control-d despues de una ejecución
+
+
+
+PARSEO
+# echo "" hola que "" "" "" "" "" "" "" tal > '$'
+# echo "" hola que "" "" "" "" "" "" "" tal > "hola"
+# echo "" hola que "" "" "" "" "" "" "" tal > hola
+# echo "" hola que "" "" "" "" "" "" "" tal > $USER
+# ./missing.out 
+    # mini output = (./missing.out: command not found)
+    # bash output = ()
+    # mini error = ()
+    # bash error = ( No such file or directory)
+"ls -l" debe ser command not found
+# espacios por terminal (segfault o error command)
+#cat' ' -> sintaxy error cd espacio al final 
+doble pipe lo pilla  
+si quotes closed 
+/Users/adrianafernandez/Desktop/MiniShell ~ cat << g<<h
+    > g<<h
+
+
+
+
+EXPANSION
+# $USER$USER
+# echo $USER$USER
+# $USE
+# echo $a?$PATH
+    # echo $a+++++$PATH
+    # $a+++++$PATH -------estas tres anteriores, tiene que expandir ambas (si estan separadas por no:alfanum)
+# echo $PATHa$HOME ----pero esta solo expande HOME, la anterior la toma como PATHa y no la encuentra (esto ahora ok, pero cuidado cd implementemos lo de arriba)
+# echo $$$PATH ----cuidado con esto tb cd se implemente lo de arriba
+# echo $1234$HOME (bash: 234/home/aldferna), (mshell: /home/aldferna)
+# echo $1234-$HOME (bash: 234-/home/aldferna), (mshell: -/home/aldferna)
+echo "$USER $PWD"
+echo "hola $USER que tal $USER jeje"
+# echo "$? $HOME"  --------->>>> el $?
+    # /home/luis-la /home/luis-la (deberia dar --> 0 /home/luis-la)
+echo "$?"
+echo "$ "
+echo "$? $USER $?"
+echo "$? $HOME $PWD"
+# echo "$" --> $
+# echo $?HELLO --> 0HELLO
+probar comillas simples dentro de dobles, dentro de simples, dentro de dobles.....
+# /home/aldferna/Desktop/MiniShell ~ echo $user
+    # [1]    200774 segmentation fault (core dumped)  ./minishell
+# /home/aldferna/Desktop/MiniShell ~ echo $user
+    # user
+
+
+
+OTROS
+/home/aldferna/Desktop/MiniShell ~ ./minishell | ./minishell
+    /home/aldferna/Desktop/MiniShell ~ /home/aldferna/Desktop/MiniShell ~ 
+# Ver lo de eliminar carpeta --> se queda en bucle infinito
+       aldferna@c1r13s6:~/Desktop/1/2/3$ rm -rf ../../../1
+       aldferna@c1r13s6:~/Desktop/1/2/3$ pwd
+       /home/aldferna/Desktop/1/2/3
+# clonado en un sitio q no sea HOME.. .hystory??
+probar sin environment
+# guardar $SHLVL (si ./minishell)->env// y $PWD (cuado haces cd) ->env
+    cambiar shellevl  ((Si ./mini SI sube, pero ./mini | ./mini NO))
+/home/aldferna/Desktop/MiniShell ~ cat <2
+      minishell: open: No such file or directory  (ok error, pero se queda pillado)
+#pueden hacer: env -i ./minishell
+    #en ese caso: leer /etc/environment (guardas path desde este y añades PWD y SHLVL->si no exite: 1)
+    #si luego quitan ademas luego hacen env -i $PATH; minishell no ejecuta comandos pero no debe petar
+#cat < out no va
+./minishell y luego ./minishell (exit se sale de todo)
+
+
+
+HISTORIAL
+Ya no da error cuando ejecutas un comando y no hay ningun comando en el historial
+Ahora los espacios no dan SIGSEGV, ya que se pasa de linea solo
+# history a veces guarda espacios o \n //sigue guardando repetidos a veces?? //puede estar a 0 cd se re-ejecuta (si vacio da segfault)
+#    tb al moverse por los comandos se pone un \n
+
+
+
+#--------------------cosas de las q podriamos pasar:
+
+#echo $"$'$PWD'"  (bash: $'/home/aldferna/Desktop/MiniShell') (mshell: $$'/home/aldferna/Desktop/MiniShell')
+
+#limitar historial (uede petar si esta muy lleno)-> al momento de escribir en el archivo chequear ctas lineas hay
